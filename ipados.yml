@@ -1,0 +1,53 @@
+name: Ag Kontrol iOS IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    name: Build unsigned iPhone and iPad IPA
+    runs-on: macos-15
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate native Xcode project
+        run: xcodegen generate --spec project.yml
+
+      - name: Build app for real iOS devices
+        run: |
+          xcodebuild \
+            -project AgKontrol.xcodeproj \
+            -scheme AgKontrol \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/AgKontrolBuild" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          set -euo pipefail
+          APP_PATH="$RUNNER_TEMP/AgKontrolBuild/Build/Products/Release-iphoneos/AgKontrol.app"
+          test -d "$APP_PATH"
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/AgKontrol.app
+          /usr/bin/zip -qry AgKontrol-unsigned.ipa Payload
+          test -s AgKontrol-unsigned.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: AgKontrol-iOS-IPA
+          path: AgKontrol-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
