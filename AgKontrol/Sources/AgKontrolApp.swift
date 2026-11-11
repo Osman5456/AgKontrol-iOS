@@ -466,7 +466,7 @@ struct NetworkDashboard: View {
                 copied = true
             } label: {
                 Label(copied ? "Rapor kopyaland\u{0131}" : "Tan\u{0131} raporunu kopyala", systemImage: "doc.on.doc")
-                    .font(.footnote).bold()
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundColor(Theme.cyan)
             }
             .buttonStyle(.plain)
